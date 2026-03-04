@@ -1,0 +1,12 @@
+{
+  "name": "html-email-viewer",
+  "version": "1.0.0",
+  "description": "Local HTML email previewer with live reload and screen size controls",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Email Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      height: 100vh;
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      min-width: 250px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar h2 {
+      padding: 16px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #89b4fa;
+      border-bottom: 1px solid #313244;
+    }
+
+    .file-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .file-item {
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .file-item:hover { background: #313244; }
+    .file-item.active { background: #45475a; color: #cba6f7; }
+
+    .file-item-name {
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-item-time {
+      font-size: 11px;
+      color: #6c7086;
+      margin-top: 2px;
+    }
+
+    .file-item.active .file-item-time { color: #9399b2; }
+
+    .file-list-empty {
+      padding: 16px;
+      font-size: 13px;
+      color: #6c7086;
+      font-style: italic;
+    }
+
+    /* Main area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-label {
+      font-size: 12px;
+      color: #888;
+      margin-right: 4px;
+    }
+
+    .size-btn {
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .size-btn:hover { background: #e8e8e8; }
+    .size-btn.active { background: #89b4fa; color: #fff; border-color: #89b4fa; }
+
+    .custom-width {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+    }
+
+    .custom-width input {
+      width: 60px;
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .custom-width span { font-size: 12px; color: #888; }
+
+    .width-indicator {
+      margin-left: auto;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .action-btn {
+      padding: 5px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover { background: #e8e8e8; }
+    .action-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .action-btn.refresh { border-color: #a6e3a1; color: #a6e3a1; }
+    .action-btn.refresh:hover:not(:disabled) { background: #a6e3a1; color: #fff; }
+
+    .action-btn.copy { border-color: #89b4fa; color: #89b4fa; }
+    .action-btn.copy:hover:not(:disabled) { background: #89b4fa; color: #fff; }
+    .action-btn.copy.copied { background: #a6e3a1; border-color: #a6e3a1; color: #fff; }
+
+    .action-btn.download { border-color: #cba6f7; color: #cba6f7; }
+    .action-btn.download:hover:not(:disabled) { background: #cba6f7; color: #fff; }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: #ddd;
+      margin: 0 6px;
+    }
+
+    /* Download modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      padding: 24px;
+      width: 380px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+
+    .modal h3 {
+      margin-bottom: 16px;
+      font-size: 16px;
+      color: #1e1e2e;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .modal input:focus { outline: none; border-color: #cba6f7; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .modal-actions button {
+      padding: 6px 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .modal-actions .cancel { background: #f8f8f8; }
+    .modal-actions .cancel:hover { background: #e8e8e8; }
+    .modal-actions .confirm { background: #cba6f7; color: #fff; border-color: #cba6f7; }
+    .modal-actions .confirm:hover { background: #b48be8; }
+
+    /* Preview area */
+    .preview-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      overflow: auto;
+      padding: 20px;
+      background: #e8e8e8;
+    }
+
+    .preview-frame {
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      transition: width 0.3s ease;
+      align-self: flex-start;
+    }
+
+    .preview-frame iframe {
+      width: 100%;
+      border: none;
+      display: block;
+    }
+
+    .no-file-selected {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 15px;
+    }
+
+    /* Connection status */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .status-dot.connected { background: #a6e3a1; }
+    .status-dot.disconnected { background: #f38ba8; }
+
+    .sidebar-footer {
+      padding: 10px 16px;
+      border-top: 1px solid #313244;
+      font-size: 11px;
+      color: #6c7086;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Email Files</h2>
+    <div class="file-list" id="fileList">
+      <div class="file-list-empty">No HTML files found</div>
+    </div>
+    <div class="sidebar-footer">
+      <span class="status-dot disconnected" id="statusDot"></span>
+      <span id="statusText">Disconnected</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="toolbar">
+      <span class="toolbar-label">Size:</span>
+      <button class="size-btn" data-width="320">320 iPhone SE</button>
+      <button class="size-btn" data-width="375">375 iPhone</button>
+      <button class="size-btn" data-width="414">414 iPhone Max</button>
+      <button class="size-btn" data-width="768">768 Tablet</button>
+      <button class="size-btn active" data-width="600">600 Email</button>
+      <button class="size-btn" data-width="800">800 Desktop</button>
+      <button class="size-btn" data-width="full">Full Width</button>
+      <div class="custom-width">
+        <input type="number" id="customWidth" placeholder="px" min="200" max="2000">
+        <span>px</span>
+      </div>
+      <span class="width-indicator" id="widthIndicator">600px</span>
+      <div class="toolbar-divider"></div>
+      <button class="action-btn refresh" id="refreshBtn" disabled>Refresh</button>
+      <button class="action-btn copy" id="copyBtn" disabled>Copy Code</button>
+      <button class="action-btn download" id="downloadBtn" disabled>Download</button>
+    </div>
+
+    <!-- Download modal -->
+    <div class="modal-overlay" id="downloadModal">
+      <div class="modal">
+        <h3>Download Email HTML</h3>
+        <input type="text" id="downloadName" placeholder="my-email.html">
+        <div class="modal-actions">
+          <button class="cancel" id="downloadCancel">Cancel</button>
+          <button class="confirm" id="downloadConfirm">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-container" id="previewContainer">
+      <div class="no-file-selected" id="noFile">Select an email file to preview</div>
+      <div class="preview-frame" id="previewFrame" style="display:none; width:600px;">
+        <iframe id="previewIframe" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fileListEl = document.getElementById("fileList");
+    const previewFrame = document.getElementById("previewFrame");
+    const previewIframe = document.getElementById("previewIframe");
+    const noFileEl = document.getElementById("noFile");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const widthIndicator = document.getElementById("widthIndicator");
+    const customWidthInput = document.getElementById("customWidth");
+
+    let currentFile = null;
+    let currentWidth = 600;
+    let files = [];
+
+    // --- File list ---
+
+    function timeAgo(ms) {
+      const sec = Math.floor((Date.now() - ms) / 1000);
+      if (sec < 60) return "just now";
+      const min = Math.floor(sec / 60);
+      if (min < 60) return min + "m ago";
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return hr + "h ago";
+      const days = Math.floor(hr / 24);
+      if (days < 30) return days + "d ago";
+      return new Date(ms).toLocaleDateString();
+    }
+
+    function renderFileList() {
+      if (files.length === 0) {
+        fileListEl.innerHTML = '<div class="file-list-empty">No HTML files found</div>';
+        return;
+      }
+      fileListEl.innerHTML = files
+        .map(
+          (f) =>
+            `<div class="file-item${f.name === currentFile ? " active" : ""}" data-file="${f.name}">
+              <div class="file-item-name">${f.name}</div>
+              <div class="file-item-time">${timeAgo(f.mtime)}</div>
+            </div>`
+        )
+        .join("");
+
+      fileListEl.querySelectorAll(".file-item").forEach((el) => {
+        el.addEventListener("click", () => selectFile(el.dataset.file));
+      });
+    }
+
+    async function fetchFileList() {
+      try {
+        const res = await fetch("/api/files");
+        files = await res.json();
+        renderFileList();
+      } catch (e) {
+        console.error("Failed to fetch file list:", e);
+      }
+    }
+
+    // --- File preview ---
+
+    function selectFile(name) {
+      currentFile = name;
+      renderFileList();
+      loadPreview();
+      updateActionButtons();
+    }
+
+    function resizeIframe() {
+      try {
+        const doc = previewIframe.contentDocument;
+        if (doc && doc.body) {
+          previewIframe.style.height = doc.documentElement.scrollHeight + "px";
+        }
+      } catch (e) { /* cross-origin guard */ }
+    }
+
+    previewIframe.addEventListener("load", resizeIframe);
+
+    function loadPreview() {
+      if (!currentFile) return;
+      noFileEl.style.display = "none";
+      previewFrame.style.display = "block";
+      previewIframe.style.height = "0";
+      const bust = Date.now();
+      previewIframe.src = `/api/file?name=${encodeURIComponent(currentFile)}&_=${bust}`;
+    }
+
+    // --- Screen size controls ---
+
+    document.querySelectorAll(".size-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".size-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        customWidthInput.value = "";
+
+        const w = btn.dataset.width;
+        if (w === "full") {
+          previewFrame.style.width = "100%";
+          widthIndicator.textContent = "Full Width";
+          currentWidth = "full";
+        } else {
+          const px = parseInt(w, 10);
+          previewFrame.style.width = px + "px";
+          widthIndicator.textContent = px + "px";
+          currentWidth = px;
+        }
+      });
+    });
+
+    customWidthInput.addEventListener("input", () => {
+      const val = parseInt(customWidthInput.value, 10);
+      if (val >= 200 && val <= 2000) {
+        document.querySelectorAll(".size-btn").forEach((b) => b.classList.remove("active"));
+        previewFrame.style.width = val + "px";
+        widthIndicator.textContent = val + "px";
+        currentWidth = val;
+      }
+    });
+
+    // --- Copy & Download ---
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadModal = document.getElementById("downloadModal");
+    const downloadName = document.getElementById("downloadName");
+    const downloadCancel = document.getElementById("downloadCancel");
+    const downloadConfirm = document.getElementById("downloadConfirm");
+
+    function updateActionButtons() {
+      const enabled = !!currentFile;
+      refreshBtn.disabled = !enabled;
+      copyBtn.disabled = !enabled;
+      downloadBtn.disabled = !enabled;
+    }
+
+    refreshBtn.addEventListener("click", () => {
+      if (currentFile) loadPreview();
+    });
+
+    async function fetchCurrentFileSource() {
+      if (!currentFile) return null;
+      const res = await fetch(`/api/file?name=${encodeURIComponent(currentFile)}`);
+      return res.text();
+    }
+
+    copyBtn.addEventListener("click", async () => {
+      const html = await fetchCurrentFileSource();
+      if (!html) return;
+      await navigator.clipboard.writeText(html);
+      copyBtn.textContent = "Copied!";
+      copyBtn.classList.add("copied");
+      setTimeout(() => {
+        copyBtn.textContent = "Copy Code";
+        copyBtn.classList.remove("copied");
+      }, 2000);
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      const base = (currentFile || "email.html").replace(/\.html$/, "");
+      const now = new Date();
+      const ts = now.getFullYear() + "-"
+        + String(now.getMonth() + 1).padStart(2, "0") + "-"
+        + String(now.getDate()).padStart(2, "0") + "_"
+        + String(now.getHours()).padStart(2, "0")
+        + String(now.getMinutes()).padStart(2, "0");
+      downloadName.value = `${base}_${ts}.html`;
+      downloadModal.classList.add("open");
+      downloadName.focus();
+      downloadName.select();
+    });
+
+    downloadCancel.addEventListener("click", () => {
+      downloadModal.classList.remove("open");
+    });
+
+    downloadModal.addEventListener("click", (e) => {
+      if (e.target === downloadModal) downloadModal.classList.remove("open");
+    });
+
+    downloadName.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") downloadConfirm.click();
+      if (e.key === "Escape") downloadCancel.click();
+    });
+
+    downloadConfirm.addEventListener("click", async () => {
+      let name = downloadName.value.trim() || "email.html";
+      if (!name.endsWith(".html")) name += ".html";
+      const html = await fetchCurrentFileSource();
+      if (!html) return;
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+      downloadModal.classList.remove("open");
+    });
+
+    // --- WebSocket ---
+
+    function connectWS() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      const ws = new WebSocket(`${proto}//${location.host}`);
+
+      ws.addEventListener("open", () => {
+        statusDot.className = "status-dot connected";
+        statusText.textContent = "Connected";
+      });
+
+      ws.addEventListener("close", () => {
+        statusDot.className = "status-dot disconnected";
+        statusText.textContent = "Disconnected";
+        setTimeout(connectWS, 2000);
+      });
+
+      ws.addEventListener("message", (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === "change") {
+            files = data.files;
+            renderFileList();
+
+            // If the currently-viewed file was changed or is still present, reload it
+            if (currentFile && data.file === currentFile && data.event !== "unlink") {
+              loadPreview();
+            }
+            // If the currently-viewed file was deleted, clear the preview
+            if (currentFile && data.event === "unlink" && data.file === currentFile) {
+              currentFile = null;
+              previewFrame.style.display = "none";
+              noFileEl.style.display = "flex";
+              updateActionButtons();
+            }
+          }
+        } catch (err) {
+          console.error("WS message error:", err);
+        }
+      });
+    }
+
+    // --- Init ---
+    async function init() {
+      await fetchFileList();
+      connectWS();
+      // Auto-select file from ?file= query param
+      const params = new URLSearchParams(location.search);
+      const requested = params.get("file");
+      if (requested && files.some((f) => f.name === requested)) {
+        selectFile(requested);
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
