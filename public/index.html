@@ -3,586 +3,1498 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HTML Email Viewer</title>
+  <title>Email QA Viewer</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f0efeb;
+      --ink: #151515;
+      --muted: #666666;
+      --line: #d9d9d9;
+      --line-strong: #151515;
+      --surface: #f4f4f4;
+      --radius: 2px;
+      --font-ui: "Arial", "Helvetica Neue", sans-serif;
+      --font-data: "Consolas", "SFMono-Regular", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      height: 100vh;
-      background: #f0f0f0;
-      color: #333;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 250px;
-      min-width: 250px;
-      background: #1e1e2e;
-      color: #cdd6f4;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .sidebar h2 {
-      padding: 16px;
+      font-family: var(--font-ui);
+      color: var(--ink);
+      background: var(--bg);
       font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #89b4fa;
-      border-bottom: 1px solid #313244;
+      line-height: 1.4;
     }
 
-    .file-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 0;
+    button,
+    input,
+    textarea {
+      font: inherit;
     }
 
-    .file-item {
-      padding: 8px 16px;
+    button {
+      border: none;
+      background: none;
       cursor: pointer;
-      transition: background 0.15s;
+      color: inherit;
     }
 
-    .file-item:hover { background: #313244; }
-    .file-item.active { background: #45475a; color: #cba6f7; }
-
-    .file-item-name {
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .app-shell {
+      min-height: 100vh;
+      max-width: 1240px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding: 24px;
     }
 
-    .file-item-time {
-      font-size: 11px;
-      color: #6c7086;
-      margin-top: 2px;
+    .sidebar,
+    .workspace-card,
+    .inspector,
+    .modal-panel,
+    .preview-panel {
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
 
-    .file-item.active .file-item-time { color: #9399b2; }
-
-    .file-list-empty {
-      padding: 16px;
-      font-size: 13px;
-      color: #6c7086;
-      font-style: italic;
-    }
-
-    /* Main area */
-    .main {
-      flex: 1;
+    .sidebar {
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      gap: 20px;
+      min-width: 0;
     }
 
-    /* Toolbar */
-    .toolbar {
+    .brand {
+      display: grid;
+      gap: 10px;
+    }
+
+    .brand h1 {
+      font-size: 26px;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .empty-state,
+    .supporting-copy,
+    .panel-subtext,
+    .metric-label,
+    .status-row,
+    .link-meta,
+    .finding-detail,
+    .modal-copy {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .sidebar-card {
+      display: grid;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-header,
+    .panel-header {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 10px 16px;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
     }
 
-    .toolbar-label {
+    .section-header h2,
+    .panel-header h2 {
       font-size: 12px;
-      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .ghost-btn,
+    .action-btn,
+    .width-btn,
+    .pill-btn,
+    .modal-btn {
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--ink);
+      padding: 8px 10px;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+
+    .ghost-btn:hover,
+    .action-btn:hover,
+    .width-btn:hover,
+    .pill-btn:hover,
+    .modal-btn:hover {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 24px;
+      min-width: 0;
+    }
+
+    .workspace-card {
+      display: grid;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-copy h2 {
+      font-size: 36px;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      max-width: 14ch;
+    }
+
+    .source-bar,
+    .summary-pills,
+    .validation-pills,
+    .control-row,
+    .action-row,
+    .link-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .source-chip,
+    .summary-pill,
+    .finding-badge,
+    .link-badge,
+    .validation-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .metric-card {
+      padding: 14px 16px;
+      border-right: 1px solid var(--line);
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .metric-card:last-child {
+      border-right: none;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .control-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       margin-right: 4px;
     }
 
-    .size-btn {
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #f8f8f8;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.15s;
+    .width-btn.active,
+    .action-btn.primary,
+    .modal-btn.primary {
+      background: var(--ink);
+      color: var(--bg);
     }
 
-    .size-btn:hover { background: #e8e8e8; }
-    .size-btn.active { background: #89b4fa; color: #fff; border-color: #89b4fa; }
+    .action-btn.secondary,
+    .action-btn.subtle {
+      background: var(--bg);
+      color: var(--ink);
+    }
 
-    .custom-width {
-      display: flex;
+    .action-btn:disabled,
+    .ghost-btn:disabled,
+    .modal-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .width-custom {
+      display: inline-flex;
       align-items: center;
-      gap: 4px;
-      margin-left: 8px;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--bg);
+      font-size: 13px;
     }
 
-    .custom-width input {
-      width: 60px;
-      padding: 4px 6px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 12px;
+    .width-custom input {
+      width: 72px;
+      border: none;
+      outline: none;
+      background: transparent;
+      text-align: right;
+      font-family: var(--font-data);
+      color: var(--ink);
+    }
+
+    .workspace-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      min-height: 0;
+    }
+
+    .preview-panel,
+    .inspector {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .preview-stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      padding: 20px;
+    }
+
+    .preview-frame {
+      margin: 0 auto;
+      width: 600px;
+      max-width: 100%;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      transition: width 0.2s ease;
+    }
+
+    .preview-frame iframe {
+      width: 100%;
+      min-height: 240px;
+      border: none;
+      display: block;
+      background: #ffffff;
+    }
+
+    .preview-empty {
+      min-height: 360px;
+      display: grid;
+      place-items: center;
       text-align: center;
+      padding: 24px;
     }
 
-    .custom-width span { font-size: 12px; color: #888; }
+    .preview-empty-card {
+      max-width: 420px;
+      display: grid;
+      gap: 10px;
+    }
 
-    .width-indicator {
-      margin-left: auto;
+    .preview-empty-card h3 {
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .inspector {
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+      overflow: auto;
+    }
+
+    .inspector-section {
+      display: grid;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .inspector-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .severity-high,
+    .validation-bad {
+      background: #151515;
+      color: #ffffff;
+      border-color: #151515;
+    }
+
+    .severity-medium,
+    .link-badge.warn {
+      background: #efefef;
+      color: #151515;
+      border-color: #d0d0d0;
+    }
+
+    .severity-low,
+    .severity-info,
+    .validation-good,
+    .link-badge.good,
+    .link-badge.bad {
+      background: #f7f7f7;
+      color: #151515;
+      border-color: #dcdcdc;
+    }
+
+    .finding-list,
+    .link-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .finding-item,
+    .link-item {
+      display: grid;
+      gap: 8px;
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .finding-head,
+    .link-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .finding-title,
+    .link-title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .finding-category,
+    .link-type {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .link-url {
+      font-family: var(--font-data);
       font-size: 12px;
-      color: #888;
+      line-height: 1.5;
+      word-break: break-word;
+      color: var(--ink);
     }
 
-    .action-btn {
-      padding: 5px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #f8f8f8;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      transition: all 0.15s;
+    .empty-state {
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
     }
 
-    .action-btn:hover { background: #e8e8e8; }
-    .action-btn:disabled { opacity: 0.4; cursor: default; }
-
-    .action-btn.refresh { border-color: #a6e3a1; color: #a6e3a1; }
-    .action-btn.refresh:hover:not(:disabled) { background: #a6e3a1; color: #fff; }
-
-    .action-btn.copy { border-color: #89b4fa; color: #89b4fa; }
-    .action-btn.copy:hover:not(:disabled) { background: #89b4fa; color: #fff; }
-    .action-btn.copy.copied { background: #a6e3a1; border-color: #a6e3a1; color: #fff; }
-
-    .action-btn.download { border-color: #cba6f7; color: #cba6f7; }
-    .action-btn.download:hover:not(:disabled) { background: #cba6f7; color: #fff; }
-
-    .toolbar-divider {
-      width: 1px;
-      height: 20px;
-      background: #ddd;
-      margin: 0 6px;
-    }
-
-    /* Download modal */
     .modal-overlay {
-      display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      display: none;
       align-items: center;
       justify-content: center;
+      padding: 20px;
+      z-index: 40;
     }
 
-    .modal-overlay.open { display: flex; }
+    .modal-overlay.open {
+      display: flex;
+    }
 
-    .modal {
-      background: #fff;
-      border-radius: 8px;
+    .modal-panel {
+      width: min(760px, 100%);
       padding: 24px;
-      width: 380px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      border: 1px solid var(--line-strong);
+      background: var(--bg);
+      display: grid;
+      gap: 16px;
     }
 
-    .modal h3 {
-      margin-bottom: 16px;
-      font-size: 16px;
-      color: #1e1e2e;
+    .modal-panel.compact {
+      width: min(460px, 100%);
     }
 
-    .modal input {
+    .modal-panel textarea,
+    .modal-panel input {
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      margin-bottom: 16px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg);
+      padding: 12px;
+      outline: none;
+      color: var(--ink);
     }
 
-    .modal input:focus { outline: none; border-color: #cba6f7; }
+    .modal-panel textarea {
+      min-height: 320px;
+      resize: vertical;
+      font-family: var(--font-data);
+      font-size: 13px;
+      line-height: 1.55;
+    }
 
     .modal-actions {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .modal-actions button {
-      padding: 6px 16px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      font-size: 13px;
-    }
+    @media (max-width: 720px) {
+      .app-shell {
+        padding: 16px;
+      }
 
-    .modal-actions .cancel { background: #f8f8f8; }
-    .modal-actions .cancel:hover { background: #e8e8e8; }
-    .modal-actions .confirm { background: #cba6f7; color: #fff; border-color: #cba6f7; }
-    .modal-actions .confirm:hover { background: #b48be8; }
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
 
-    /* Preview area */
-    .preview-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      overflow: auto;
-      padding: 20px;
-      background: #e8e8e8;
-    }
+      .metric-card:nth-child(2n) {
+        border-right: none;
+      }
 
-    .preview-frame {
-      background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      transition: width 0.3s ease;
-      align-self: flex-start;
-    }
+      .metric-card:nth-last-child(-n + 2) {
+        border-bottom: none;
+      }
 
-    .preview-frame iframe {
-      width: 100%;
-      border: none;
-      display: block;
-    }
+      .hero-copy h2 {
+        font-size: 28px;
+      }
 
-    .no-file-selected {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: #999;
-      font-size: 15px;
-    }
+      .metric-value {
+        font-size: 24px;
+      }
 
-    /* Connection status */
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 8px;
-    }
-
-    .status-dot.connected { background: #a6e3a1; }
-    .status-dot.disconnected { background: #f38ba8; }
-
-    .sidebar-footer {
-      padding: 10px 16px;
-      border-top: 1px solid #313244;
-      font-size: 11px;
-      color: #6c7086;
-      display: flex;
-      align-items: center;
+      .preview-stage {
+        padding: 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <h2>Email Files</h2>
-    <div class="file-list" id="fileList">
-      <div class="file-list-empty">No HTML files found</div>
-    </div>
-    <div class="sidebar-footer">
-      <span class="status-dot disconnected" id="statusDot"></span>
-      <span id="statusText">Disconnected</span>
-    </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Email Preview and Readiness</h1>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="section-header" style="justify-content: flex-start;">
+          <div class="action-row">
+            <button class="ghost-btn" id="uploadOpenBtn">Upload HTML</button>
+            <button class="ghost-btn" id="pasteOpenBtn">Paste HTML</button>
+          </div>
+        </div>
+        <div class="supporting-copy" id="sourceModeLabel">Select a file or paste HTML to start.</div>
+      </div>
+
+    </aside>
+
+    <main class="workspace">
+      <section class="workspace-card">
+        <div class="hero">
+          <div class="hero-copy">
+            <div class="source-bar">
+              <span class="source-chip" id="sourceChip">No source selected</span>
+              <span class="summary-pill" id="widthChip">Preview width: 600px</span>
+            </div>
+            <h2>Clear the send before it reaches HubSpot.</h2>
+            <p class="supporting-copy">Check width behavior, scan the checklist, and validate links before marketing moves the HTML into the sending platform.</p>
+          </div>
+
+          <div class="control-panel">
+            <div class="action-row">
+              <button class="action-btn subtle" id="refreshBtn" disabled>Refresh Preview</button>
+              <button class="action-btn secondary" id="validateLinksBtn" disabled>Validate Links</button>
+              <button class="action-btn primary" id="copyBtn" disabled>Copy HTML</button>
+              <button class="action-btn subtle" id="downloadBtn" disabled>Download</button>
+            </div>
+            <div class="status-row" id="workspaceStatus">Checklist runs automatically when you load a watched file or pasted draft.</div>
+          </div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid">
+          <div class="metric-card">
+            <div class="metric-label">HTML size</div>
+            <div class="metric-value">--</div>
+            <div class="panel-subtext">Run a checklist to see clipping risk.</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Unique links</div>
+            <div class="metric-value">--</div>
+            <div class="panel-subtext">Each href is grouped once.</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Images missing alt</div>
+            <div class="metric-value">--</div>
+            <div class="panel-subtext">Accessibility and inbox image blocking.</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Layout tables</div>
+            <div class="metric-value">--</div>
+            <div class="panel-subtext">Helpful for cross-client reliability.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-body">
+        <section class="preview-panel">
+          <div class="panel-header">
+            <h2>Live Preview</h2>
+            <div class="action-row">
+              <div class="panel-subtext" id="previewLabel">No email loaded</div>
+              <button class="ghost-btn" id="reloadListBtn" type="button">Refresh</button>
+            </div>
+          </div>
+          <div class="control-row">
+            <span class="control-label">Widths</span>
+            <button class="width-btn" data-width="320">320</button>
+            <button class="width-btn" data-width="375">375</button>
+            <button class="width-btn" data-width="414">414</button>
+            <button class="width-btn" data-width="600">600</button>
+            <button class="width-btn" data-width="768">768</button>
+            <button class="width-btn" data-width="800">800</button>
+            <button class="width-btn" data-width="full">Full</button>
+            <label class="width-custom">
+              <span>Custom</span>
+              <input id="customWidth" type="number" min="200" max="2000" placeholder="px">
+            </label>
+          </div>
+          <div class="preview-stage" id="previewStage">
+            <div class="preview-empty" id="previewEmpty">
+              <div class="preview-empty-card">
+                <h3>No source loaded.</h3>
+                <p class="supporting-copy">Upload an HTML file or paste a draft to start preview, checklist, and link review.</p>
+                <div class="action-row" style="justify-content: center;">
+                  <button class="pill-btn" id="previewUploadBtn">Upload HTML</button>
+                  <button class="pill-btn" id="previewPasteBtn">Paste a Draft</button>
+                </div>
+              </div>
+            </div>
+            <div class="preview-frame" id="previewFrame" style="display: none; width: 600px;">
+              <iframe id="previewIframe" scrolling="no" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
+            </div>
+          </div>
+        </section>
+
+        <aside class="inspector">
+          <section class="inspector-section">
+            <div class="panel-header">
+              <h2>Checklist</h2>
+              <div class="action-row">
+                <div class="panel-subtext" id="checklistStatus">Waiting for a source</div>
+                <button class="ghost-btn" id="copyChecklistBtn" type="button">Copy Fixes</button>
+              </div>
+            </div>
+            <div class="summary-pills" id="findingSummary"></div>
+            <div class="finding-list" id="findingList">
+              <div class="empty-state">Open an email to run the built-in checklist.</div>
+            </div>
+          </section>
+
+          <section class="inspector-section">
+            <div class="panel-header">
+              <h2>Links</h2>
+              <div class="panel-subtext" id="linkStatus">Validation has not been run.</div>
+            </div>
+            <div class="validation-pills" id="validationSummary"></div>
+            <div class="link-list" id="linkList">
+              <div class="empty-state">Links found in the email will appear here, including placeholder, relative, HTTP, and checked URLs.</div>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
   </div>
 
-  <div class="main">
-    <div class="toolbar">
-      <span class="toolbar-label">Size:</span>
-      <button class="size-btn" data-width="320">320 iPhone SE</button>
-      <button class="size-btn" data-width="375">375 iPhone</button>
-      <button class="size-btn" data-width="414">414 iPhone Max</button>
-      <button class="size-btn" data-width="768">768 Tablet</button>
-      <button class="size-btn active" data-width="600">600 Email</button>
-      <button class="size-btn" data-width="800">800 Desktop</button>
-      <button class="size-btn" data-width="full">Full Width</button>
-      <div class="custom-width">
-        <input type="number" id="customWidth" placeholder="px" min="200" max="2000">
-        <span>px</span>
-      </div>
-      <span class="width-indicator" id="widthIndicator">600px</span>
-      <div class="toolbar-divider"></div>
-      <button class="action-btn refresh" id="refreshBtn" disabled>Refresh</button>
-      <button class="action-btn copy" id="copyBtn" disabled>Copy Code</button>
-      <button class="action-btn download" id="downloadBtn" disabled>Download</button>
-    </div>
-
-    <!-- Download modal -->
-    <div class="modal-overlay" id="downloadModal">
-      <div class="modal">
-        <h3>Download Email HTML</h3>
-        <input type="text" id="downloadName" placeholder="my-email.html">
-        <div class="modal-actions">
-          <button class="cancel" id="downloadCancel">Cancel</button>
-          <button class="confirm" id="downloadConfirm">Download</button>
+  <div class="modal-overlay" id="pasteModal">
+    <div class="modal-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Paste HTML Draft</h2>
+          <p class="modal-copy">Use this when someone drops HTML into Slack, Google Docs, or HubSpot and needs a quick review cycle.</p>
         </div>
       </div>
-    </div>
-
-    <div class="preview-container" id="previewContainer">
-      <div class="no-file-selected" id="noFile">Select an email file to preview</div>
-      <div class="preview-frame" id="previewFrame" style="display:none; width:600px;">
-        <iframe id="previewIframe" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <textarea id="pasteInput" placeholder="Paste complete HTML here..."></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn" id="pasteCancelBtn">Cancel</button>
+        <button class="modal-btn primary" id="pasteApplyBtn">Preview Draft</button>
       </div>
     </div>
   </div>
 
+  <div class="modal-overlay" id="downloadModal">
+    <div class="modal-panel compact">
+      <div class="panel-header">
+        <div>
+          <h2>Download HTML</h2>
+          <p class="modal-copy">Use a timestamped file when you need a clean handoff into HubSpot or another sender.</p>
+        </div>
+      </div>
+      <input type="text" id="downloadName" placeholder="campaign-email.html">
+      <div class="modal-actions">
+        <button class="modal-btn" id="downloadCancelBtn">Cancel</button>
+        <button class="modal-btn primary" id="downloadConfirmBtn">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="uploadInput" accept=".html,text/html" hidden>
+
   <script>
-    const fileListEl = document.getElementById("fileList");
-    const previewFrame = document.getElementById("previewFrame");
-    const previewIframe = document.getElementById("previewIframe");
-    const noFileEl = document.getElementById("noFile");
-    const statusDot = document.getElementById("statusDot");
-    const statusText = document.getElementById("statusText");
-    const widthIndicator = document.getElementById("widthIndicator");
-    const customWidthInput = document.getElementById("customWidth");
-
-    let currentFile = null;
-    let currentWidth = 600;
-    let files = [];
-
-    // --- File list ---
-
-    function timeAgo(ms) {
-      const sec = Math.floor((Date.now() - ms) / 1000);
-      if (sec < 60) return "just now";
-      const min = Math.floor(sec / 60);
-      if (min < 60) return min + "m ago";
-      const hr = Math.floor(min / 60);
-      if (hr < 24) return hr + "h ago";
-      const days = Math.floor(hr / 24);
-      if (days < 30) return days + "d ago";
-      return new Date(ms).toLocaleDateString();
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
     }
 
-    function renderFileList() {
-      if (files.length === 0) {
-        fileListEl.innerHTML = '<div class="file-list-empty">No HTML files found</div>';
+    const state = {
+      files: [],
+      config: null,
+      sourceMode: null,
+      currentFile: null,
+      startupHtml: "",
+      startupFileName: "",
+      pastedHtml: "",
+      uploadedHtml: "",
+      uploadedFileName: "",
+      currentWidth: "full",
+      checklist: null,
+      linkValidation: null,
+      checklistLoading: false,
+      linkValidationLoading: false,
+    };
+
+    const sourceModeLabel = document.getElementById("sourceModeLabel");
+    const sourceChip = document.getElementById("sourceChip");
+    const widthChip = document.getElementById("widthChip");
+    const previewLabel = document.getElementById("previewLabel");
+    const workspaceStatus = document.getElementById("workspaceStatus");
+    const checklistStatus = document.getElementById("checklistStatus");
+    const copyChecklistBtn = document.getElementById("copyChecklistBtn");
+    const linkStatus = document.getElementById("linkStatus");
+    const findingSummary = document.getElementById("findingSummary");
+    const findingList = document.getElementById("findingList");
+    const validationSummary = document.getElementById("validationSummary");
+    const linkList = document.getElementById("linkList");
+    const summaryGrid = document.getElementById("summaryGrid");
+    const previewEmpty = document.getElementById("previewEmpty");
+    const previewFrame = document.getElementById("previewFrame");
+    const previewIframe = document.getElementById("previewIframe");
+    const customWidthInput = document.getElementById("customWidth");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const validateLinksBtn = document.getElementById("validateLinksBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const reloadListBtn = document.getElementById("reloadListBtn");
+    const uploadOpenBtn = document.getElementById("uploadOpenBtn");
+    const pasteOpenBtn = document.getElementById("pasteOpenBtn");
+    const previewUploadBtn = document.getElementById("previewUploadBtn");
+    const previewPasteBtn = document.getElementById("previewPasteBtn");
+    const uploadInput = document.getElementById("uploadInput");
+    const pasteModal = document.getElementById("pasteModal");
+    const pasteInput = document.getElementById("pasteInput");
+    const pasteCancelBtn = document.getElementById("pasteCancelBtn");
+    const pasteApplyBtn = document.getElementById("pasteApplyBtn");
+    const downloadModal = document.getElementById("downloadModal");
+    const downloadName = document.getElementById("downloadName");
+    const downloadCancelBtn = document.getElementById("downloadCancelBtn");
+    const downloadConfirmBtn = document.getElementById("downloadConfirmBtn");
+
+    const metricCards = Array.from(summaryGrid.querySelectorAll(".metric-card"));
+    const widthButtons = Array.from(document.querySelectorAll(".width-btn"));
+    let previewResizeObserver = null;
+    let previewMutationObserver = null;
+    let previewResizeTimers = [];
+
+    function formatBytes(value) {
+      if (value == null) return "--";
+      if (value < 1024) return `${value} B`;
+      return `${(value / 1024).toFixed(1)} KB`;
+    }
+
+    function buildPreviewUrl(fileName) {
+      return `/preview/${fileName.split("/").map((segment) => encodeURIComponent(segment)).join("/")}?_=${Date.now()}`;
+    }
+
+    function getSourceName() {
+      switch (state.sourceMode) {
+        case "file": return state.currentFile || "No source selected";
+        case "startup": return state.startupFileName || "No source selected";
+        case "upload": return state.uploadedFileName || "No source selected";
+        case "pasted": return "Pasted draft";
+        default: return "No source selected";
+      }
+    }
+
+    function hasActiveSource() {
+      switch (state.sourceMode) {
+        case "file": return Boolean(state.currentFile);
+        case "startup": return Boolean(state.startupHtml.trim());
+        case "pasted": return Boolean(state.pastedHtml.trim());
+        case "upload": return Boolean(state.uploadedHtml.trim());
+        default: return false;
+      }
+    }
+
+    function setWorkspaceMessage(message) {
+      workspaceStatus.textContent = message;
+    }
+
+    function setPreviewWidth(width) {
+      state.currentWidth = width;
+      widthButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.width === String(width));
+      });
+
+      if (width === "full") {
+        previewFrame.style.width = "100%";
+        widthChip.textContent = "Preview width: Full";
         return;
       }
-      fileListEl.innerHTML = files
-        .map(
-          (f) =>
-            `<div class="file-item${f.name === currentFile ? " active" : ""}" data-file="${f.name}">
-              <div class="file-item-name">${f.name}</div>
-              <div class="file-item-time">${timeAgo(f.mtime)}</div>
-            </div>`
-        )
-        .join("");
 
-      fileListEl.querySelectorAll(".file-item").forEach((el) => {
-        el.addEventListener("click", () => selectFile(el.dataset.file));
+      previewFrame.style.width = `${width}px`;
+      widthChip.textContent = `Preview width: ${width}px`;
+    }
+
+    function updateButtons() {
+      const enabled = hasActiveSource();
+      refreshBtn.disabled = !enabled || state.checklistLoading;
+      validateLinksBtn.disabled = !enabled || state.linkValidationLoading;
+      copyBtn.disabled = !enabled;
+      downloadBtn.disabled = !enabled;
+      copyChecklistBtn.disabled = !state.checklist || !state.checklist.findings || state.checklist.findings.length === 0;
+      validateLinksBtn.textContent = state.linkValidationLoading ? "Checking Links..." : "Validate Links";
+      refreshBtn.textContent = state.checklistLoading ? "Refreshing..." : "Refresh Preview";
+    }
+
+    function buildChecklistCopyText() {
+      if (!state.checklist || !state.checklist.findings) return "";
+
+      const actionableFindings = state.checklist.findings.filter((finding) => finding.severity !== "info");
+      const findingsToCopy = actionableFindings.length > 0 ? actionableFindings : state.checklist.findings;
+
+      return [
+        `Please update this HTML email: ${getSourceName()}.`,
+        "",
+        "Fix the following checklist issues:",
+        ...findingsToCopy.map((finding, index) => {
+          const detail = finding.detail ? ` ${finding.detail}` : "";
+          return `${index + 1}. [${finding.severity.toUpperCase()}] ${finding.category}: ${finding.message}${detail}`;
+        }),
+      ].join("\n");
+    }
+
+    function updateSourceMeta() {
+      const sourceName = getSourceName();
+      sourceChip.textContent = sourceName;
+      previewLabel.textContent = sourceName === "No source selected" ? "No email loaded" : sourceName;
+
+      switch (state.sourceMode) {
+        case "file":
+          sourceModeLabel.textContent = state.currentFile ? `Watching file: ${state.currentFile}` : "Select a file, upload HTML, or paste HTML to start.";
+          break;
+        case "startup":
+          sourceModeLabel.textContent = state.startupFileName ? `Watching file: ${state.startupFileName}` : "Select a file, upload HTML, or paste HTML to start.";
+          break;
+        case "upload":
+          sourceModeLabel.textContent = state.uploadedFileName ? `Working from uploaded file: ${state.uploadedFileName}` : "Select a file, upload HTML, or paste HTML to start.";
+          break;
+        case "pasted":
+          sourceModeLabel.textContent = "Working from pasted HTML. Select a file to switch back to file-based preview.";
+          break;
+        default:
+          sourceModeLabel.textContent = "Select a file, upload HTML, or paste HTML to start.";
+      }
+    }
+
+    function renderSummaryMetrics() {
+      const fallback = [
+        ["HTML size", "--", "Run a checklist to see clipping risk."],
+        ["Unique links", "--", "Each href is grouped once."],
+        ["Images missing alt", "--", "Accessibility and inbox image blocking."],
+        ["Layout tables", "--", "Helpful for cross-client reliability."],
+      ];
+
+      const metrics = state.checklist && state.checklist.metrics;
+      const values = metrics
+        ? [
+            ["HTML size", formatBytes(metrics.sizeBytes), metrics.sizeBytes > 102 * 1024 ? "Gmail clipping risk is high." : "Within Gmail clipping range."],
+            ["Unique links", String(metrics.uniqueLinkCount), `${metrics.linkCount} total link instance${metrics.linkCount === 1 ? "" : "s"}.`],
+            ["Images missing alt", String(metrics.missingAltCount), `${metrics.imageCount} image${metrics.imageCount === 1 ? "" : "s"} found.`],
+            ["Layout tables", String(metrics.tableCount), metrics.tableCount === 0 ? "No table layout detected." : "Table layout detected for email clients."],
+          ]
+        : fallback;
+
+      metricCards.forEach((card, index) => {
+        const [label, value, subtext] = values[index];
+        card.querySelector(".metric-label").textContent = label;
+        card.querySelector(".metric-value").textContent = value;
+        card.querySelector(".panel-subtext").textContent = subtext;
       });
     }
 
+    function renderFindings() {
+      findingSummary.innerHTML = "";
+      findingList.innerHTML = "";
+
+      if (!state.checklist) {
+        checklistStatus.textContent = "Waiting for a source";
+        findingList.innerHTML = '<div class="empty-state">Open an email to run the built-in checklist.</div>';
+        return;
+      }
+
+      const counts = { high: 0, medium: 0, low: 0, info: 0 };
+      state.checklist.findings.forEach((finding) => {
+        counts[finding.severity] += 1;
+      });
+
+      checklistStatus.textContent = state.checklist.findings.length === 0
+        ? "No checklist issues found"
+        : `${state.checklist.findings.length} checklist item${state.checklist.findings.length === 1 ? "" : "s"}`;
+
+      [
+        ["high", `${counts.high} high`],
+        ["medium", `${counts.medium} medium`],
+        ["low", `${counts.low} low`],
+        ["info", `${counts.info} info`],
+      ].forEach(([severity, label]) => {
+        findingSummary.appendChild(el("span", `summary-pill severity-${severity}`, label));
+      });
+
+      if (state.checklist.findings.length === 0) {
+        findingList.innerHTML = '<div class="empty-state">No built-in issues were detected. Keep in mind that this does not replace inbox rendering tests across email clients.</div>';
+        return;
+      }
+
+      state.checklist.findings.forEach((finding) => {
+        const item = el("div", "finding-item");
+        const head = el("div", "finding-head");
+
+        const body = el("div");
+        body.appendChild(el("div", "finding-category", finding.category));
+        body.appendChild(el("div", "finding-title", finding.message));
+
+        head.appendChild(body);
+        head.appendChild(el("span", `finding-badge severity-${finding.severity}`, finding.severity));
+        item.appendChild(head);
+
+        if (finding.detail) {
+          item.appendChild(el("div", "finding-detail", finding.detail));
+        }
+
+        findingList.appendChild(item);
+      });
+    }
+
+    function renderLinks() {
+      validationSummary.innerHTML = "";
+      linkList.innerHTML = "";
+
+      if (!state.checklist) {
+        linkStatus.textContent = "Validation has not been run.";
+        linkList.innerHTML = '<div class="empty-state">Links found in the email will appear here, including placeholder, relative, HTTP, and checked URLs.</div>';
+        return;
+      }
+
+      const links = state.checklist.links || [];
+      const validationMap = new Map((state.linkValidation && state.linkValidation.results || []).map((result) => [result.href, result]));
+      const checkedCount = state.linkValidation ? state.linkValidation.results.length : 0;
+      const brokenCount = state.linkValidation ? state.linkValidation.results.filter((result) => !result.ok).length : 0;
+      const attentionCount = links.filter((link) => link.issue).length;
+
+      linkStatus.textContent = state.linkValidation
+        ? `${checkedCount} checked, ${brokenCount} failing, ${attentionCount} needing attention`
+        : `${links.length} unique href${links.length === 1 ? "" : "s"} found`;
+
+      [
+        [links.length, "unique links", "validation-good"],
+        [attentionCount, "need attention", attentionCount ? "validation-bad" : "validation-good"],
+        [checkedCount, "validated", checkedCount ? "validation-good" : ""],
+      ].forEach(([value, label, className]) => {
+        validationSummary.appendChild(el("span", `validation-pill ${className}`.trim(), `${value} ${label}`));
+      });
+
+      if (state.linkValidation && state.linkValidation.skippedCount > 0) {
+        validationSummary.appendChild(el("span", "validation-pill", `${state.linkValidation.skippedCount} skipped after limit`));
+      }
+
+      if (links.length === 0) {
+        linkList.innerHTML = '<div class="empty-state">No links were detected in this HTML.</div>';
+        return;
+      }
+
+      links.forEach((link) => {
+        const result = validationMap.get(link.href);
+        const item = el("div", "link-item");
+        const head = el("div", "link-head");
+
+        const left = el("div");
+        left.appendChild(el("div", "link-type", link.type));
+        left.appendChild(el("div", "link-url", link.href || "(empty href)"));
+
+        const badge = el("span", "link-badge");
+        if (result) {
+          badge.classList.add(result.ok ? "good" : "bad");
+          badge.textContent = result.status ? `HTTP ${result.status}` : "Failed";
+        } else if (link.checkable || link.issue) {
+          badge.classList.add("warn");
+          badge.textContent = link.checkable ? "Not validated" : "Needs review";
+        } else {
+          badge.textContent = "No network check";
+        }
+
+        head.appendChild(left);
+        head.appendChild(badge);
+        item.appendChild(head);
+
+        const meta = el("div", "link-meta");
+        meta.appendChild(el("span", "link-badge", `${link.count} occurrence${link.count === 1 ? "" : "s"}`));
+
+        if (link.examples.length > 0) {
+          meta.appendChild(el("span", "link-badge", `Text: ${link.examples.join(" | ")}`));
+        }
+
+        if (link.issue) {
+          meta.appendChild(el("span", "link-badge warn", link.issue));
+        }
+
+        if (result && result.note) {
+          meta.appendChild(el("span", `link-badge ${result.ok ? "good" : "bad"}`, result.note));
+        }
+
+        if (result && result.redirected && result.finalUrl && result.finalUrl !== result.href) {
+          meta.appendChild(el("span", "link-badge", `Redirected to ${result.finalUrl}`));
+        }
+
+        item.appendChild(meta);
+        linkList.appendChild(item);
+      });
+    }
+
+    function renderAll() {
+      updateSourceMeta();
+      renderSummaryMetrics();
+      renderFindings();
+      renderLinks();
+      updateButtons();
+    }
+
+    function clearSource() {
+      cleanupPreviewSizing();
+      resetSource({});
+      previewFrame.style.display = "none";
+      previewEmpty.style.display = "grid";
+      previewIframe.removeAttribute("src");
+      previewIframe.removeAttribute("srcdoc");
+      renderAll();
+    }
+
+    async function fetchConfig() {
+      const res = await fetch("/api/config");
+      state.config = await res.json();
+    }
+
     async function fetchFileList() {
-      try {
-        const res = await fetch("/api/files");
-        files = await res.json();
-        renderFileList();
-      } catch (e) {
-        console.error("Failed to fetch file list:", e);
+      const res = await fetch("/api/files");
+      state.files = await res.json();
+    }
+
+    async function getCurrentHtml() {
+      switch (state.sourceMode) {
+        case "startup": return state.startupHtml;
+        case "pasted": return state.pastedHtml;
+        case "upload": return state.uploadedHtml;
+        case "file": {
+          if (!state.currentFile) return "";
+          const res = await fetch(`/api/file?name=${encodeURIComponent(state.currentFile)}`);
+          if (!res.ok) throw new Error("Unable to load the selected file");
+          return res.text();
+        }
+        default: return "";
       }
     }
 
-    // --- File preview ---
+    function cleanupPreviewSizing() {
+      if (previewResizeObserver) {
+        previewResizeObserver.disconnect();
+        previewResizeObserver = null;
+      }
 
-    function selectFile(name) {
-      currentFile = name;
-      renderFileList();
-      loadPreview();
-      updateActionButtons();
+      if (previewMutationObserver) {
+        previewMutationObserver.disconnect();
+        previewMutationObserver = null;
+      }
+
+      previewResizeTimers.forEach((timerId) => clearTimeout(timerId));
+      previewResizeTimers = [];
     }
 
     function resizeIframe() {
       try {
         const doc = previewIframe.contentDocument;
-        if (doc && doc.body) {
-          previewIframe.style.height = doc.documentElement.scrollHeight + "px";
+        if (!doc || !doc.documentElement) return;
+
+        doc.documentElement.style.overflow = "hidden";
+        if (doc.body) {
+          doc.body.style.overflow = "hidden";
         }
-      } catch (e) { /* cross-origin guard */ }
+
+        const height = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.documentElement.offsetHeight,
+          doc.body ? doc.body.scrollHeight : 0,
+          doc.body ? doc.body.offsetHeight : 0,
+        );
+        previewIframe.style.height = `${Math.max(height, 320)}px`;
+      } catch (error) {
+        console.error("Preview resize failed", error);
+      }
     }
 
-    previewIframe.addEventListener("load", resizeIframe);
+    function setupPreviewSizing() {
+      cleanupPreviewSizing();
+      resizeIframe();
+
+      const doc = previewIframe.contentDocument;
+      if (!doc || !doc.documentElement) return;
+
+      [0, 60, 180, 400, 900].forEach((delay) => {
+        const timerId = setTimeout(resizeIframe, delay);
+        previewResizeTimers.push(timerId);
+      });
+
+      if (typeof ResizeObserver !== "undefined") {
+        previewResizeObserver = new ResizeObserver(() => resizeIframe());
+        previewResizeObserver.observe(doc.documentElement);
+        if (doc.body) {
+          previewResizeObserver.observe(doc.body);
+        }
+      }
+
+      previewMutationObserver = new MutationObserver(() => resizeIframe());
+      previewMutationObserver.observe(doc.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true,
+      });
+
+      Array.from(doc.images || []).forEach((image) => {
+        image.addEventListener("load", resizeIframe, { once: true });
+        image.addEventListener("error", resizeIframe, { once: true });
+      });
+    }
+
+    previewIframe.addEventListener("load", setupPreviewSizing);
+
+    function setIframeSrc(url) {
+      previewIframe.removeAttribute("srcdoc");
+      previewIframe.src = url;
+    }
+
+    function setIframeSrcdoc(html) {
+      previewIframe.removeAttribute("src");
+      previewIframe.srcdoc = html;
+    }
 
     function loadPreview() {
-      if (!currentFile) return;
-      noFileEl.style.display = "none";
+      if (!hasActiveSource()) {
+        cleanupPreviewSizing();
+        previewFrame.style.display = "none";
+        previewEmpty.style.display = "grid";
+        previewIframe.removeAttribute("src");
+        previewIframe.removeAttribute("srcdoc");
+        return;
+      }
+
+      previewEmpty.style.display = "none";
       previewFrame.style.display = "block";
-      previewIframe.style.height = "0";
-      const bust = Date.now();
-      previewIframe.src = `/api/file?name=${encodeURIComponent(currentFile)}&_=${bust}`;
+      previewIframe.style.height = "320px";
+
+      if (state.sourceMode === "startup") {
+        setIframeSrc(`/preview-startup/${encodeURIComponent(state.startupFileName)}?_=${Date.now()}`);
+      } else if (state.sourceMode === "pasted") {
+        setIframeSrcdoc(state.pastedHtml);
+      } else if (state.sourceMode === "upload") {
+        setIframeSrcdoc(state.uploadedHtml);
+      } else if (state.currentFile) {
+        setIframeSrc(buildPreviewUrl(state.currentFile));
+      }
     }
 
-    // --- Screen size controls ---
+    async function runChecklist() {
+      if (!hasActiveSource()) return;
+      state.checklistLoading = true;
+      state.linkValidation = null;
+      checklistStatus.textContent = "Running checklist...";
+      linkStatus.textContent = "Validation has not been run.";
+      updateButtons();
+      setWorkspaceMessage("Refreshing preview and checklist...");
 
-    document.querySelectorAll(".size-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".size-btn").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        customWidthInput.value = "";
+      try {
+        const html = await getCurrentHtml();
+        const res = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ html, sourceName: getSourceName() }),
+        });
 
-        const w = btn.dataset.width;
-        if (w === "full") {
-          previewFrame.style.width = "100%";
-          widthIndicator.textContent = "Full Width";
-          currentWidth = "full";
-        } else {
-          const px = parseInt(w, 10);
-          previewFrame.style.width = px + "px";
-          widthIndicator.textContent = px + "px";
-          currentWidth = px;
+        if (!res.ok) throw new Error("Checklist request failed");
+
+        state.checklist = await res.json();
+        setWorkspaceMessage("Checklist updated.");
+      } catch (error) {
+        console.error(error);
+        state.checklist = null;
+        setWorkspaceMessage("Checklist could not be completed.");
+      } finally {
+        state.checklistLoading = false;
+        renderAll();
+      }
+    }
+
+    async function validateLinks() {
+      if (!hasActiveSource()) return;
+      state.linkValidationLoading = true;
+      linkStatus.textContent = "Validating links...";
+      updateButtons();
+      setWorkspaceMessage("Running network checks on email links...");
+
+      try {
+        const html = await getCurrentHtml();
+        const res = await fetch("/api/validate-links", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ html }),
+        });
+
+        if (!res.ok) throw new Error("Link validation request failed");
+
+        state.linkValidation = await res.json();
+        setWorkspaceMessage("Link validation completed.");
+      } catch (error) {
+        console.error(error);
+        state.linkValidation = { results: [], skippedCount: 0 };
+        setWorkspaceMessage("Link validation failed. Check server network access.");
+      } finally {
+        state.linkValidationLoading = false;
+        renderLinks();
+        updateButtons();
+      }
+    }
+
+    function resetSource(overrides) {
+      Object.assign(state, {
+        sourceMode: null,
+        currentFile: null,
+        startupHtml: "",
+        startupFileName: "",
+        pastedHtml: "",
+        uploadedHtml: "",
+        uploadedFileName: "",
+        checklist: null,
+        linkValidation: null,
+      }, overrides);
+    }
+
+    async function activateSource(overrides) {
+      resetSource(overrides);
+      loadPreview();
+      renderAll();
+      await runChecklist();
+    }
+
+    async function selectFile(name) {
+      await activateSource({ sourceMode: "file", currentFile: name });
+    }
+
+    async function applyPastedHtml(html) {
+      await activateSource({ sourceMode: "pasted", pastedHtml: html });
+    }
+
+    async function applyUploadedFile(file) {
+      const html = await file.text();
+      await activateSource({
+        sourceMode: "upload",
+        uploadedHtml: html,
+        uploadedFileName: file.name || "uploaded.html",
+      });
+    }
+
+    async function loadStartupSource() {
+      const res = await fetch("/api/startup-file");
+      if (!res.ok) throw new Error("Unable to load startup file");
+
+      const data = await res.json();
+      await activateSource({
+        sourceMode: "startup",
+        startupHtml: data.html,
+        startupFileName: data.name,
+      });
+    }
+
+    async function refreshCurrentSource() {
+      if (!hasActiveSource()) return;
+      setWorkspaceMessage("Refreshing preview and checklist...");
+
+      if (state.sourceMode === "startup" && state.startupFileName) {
+        await loadStartupSource();
+        return;
+      }
+
+      if (state.sourceMode === "file" && state.currentFile) {
+        await fetchFileList();
+        const stillExists = state.files.some((file) => file.name === state.currentFile);
+        if (!stillExists) {
+          clearSource();
+          setWorkspaceMessage(`The selected file was removed: ${state.currentFile}`);
+          return;
         }
+      }
+
+      loadPreview();
+      await runChecklist();
+    }
+
+    async function copyToClipboard(text, button, successMessage) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const previous = button.textContent;
+        button.textContent = "Copied";
+        setWorkspaceMessage(successMessage);
+        setTimeout(() => { button.textContent = previous; }, 1400);
+      } catch (error) {
+        console.error(error);
+        setWorkspaceMessage("Clipboard access failed.");
+      }
+    }
+
+    async function copyCurrentHtml() {
+      const html = await getCurrentHtml();
+      await copyToClipboard(html, copyBtn, "HTML copied to clipboard.");
+    }
+
+    async function copyChecklistFixes() {
+      const text = buildChecklistCopyText();
+      if (!text) {
+        setWorkspaceMessage("No checklist fixes are available to copy.");
+        return;
+      }
+      await copyToClipboard(text, copyChecklistBtn, "Checklist fixes copied for handoff.");
+    }
+
+    function openPasteModal() {
+      pasteModal.classList.add("open");
+      pasteInput.value = state.sourceMode === "pasted" ? state.pastedHtml : "";
+      pasteInput.focus();
+    }
+
+    function closePasteModal() {
+      pasteModal.classList.remove("open");
+    }
+
+    function triggerUpload() {
+      uploadInput.value = "";
+      uploadInput.click();
+    }
+
+    function openDownloadModal() {
+      const baseName = getSourceName().replace(/\.html$/i, "") || "email-draft";
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+      downloadName.value = `${baseName}_${stamp}.html`.replace(/\s+/g, "-");
+      downloadModal.classList.add("open");
+      downloadName.focus();
+      downloadName.select();
+    }
+
+    function closeDownloadModal() {
+      downloadModal.classList.remove("open");
+    }
+
+    async function downloadCurrentHtml() {
+      try {
+        let fileName = downloadName.value.trim() || "email-draft.html";
+        if (!fileName.toLowerCase().endsWith(".html")) fileName += ".html";
+        const html = await getCurrentHtml();
+        const blob = new Blob([html], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        closeDownloadModal();
+        setWorkspaceMessage(`Downloaded ${fileName}.`);
+      } catch (error) {
+        console.error(error);
+        setWorkspaceMessage("Download failed.");
+      }
+    }
+
+    widthButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const width = button.dataset.width === "full" ? "full" : Number(button.dataset.width);
+        customWidthInput.value = "";
+        setPreviewWidth(width);
       });
     });
 
     customWidthInput.addEventListener("input", () => {
-      const val = parseInt(customWidthInput.value, 10);
-      if (val >= 200 && val <= 2000) {
-        document.querySelectorAll(".size-btn").forEach((b) => b.classList.remove("active"));
-        previewFrame.style.width = val + "px";
-        widthIndicator.textContent = val + "px";
-        currentWidth = val;
+      const value = Number(customWidthInput.value);
+      if (value >= 200 && value <= 2000) {
+        widthButtons.forEach((button) => button.classList.remove("active"));
+        setPreviewWidth(value);
       }
     });
 
-    // --- Copy & Download ---
+    refreshBtn.addEventListener("click", refreshCurrentSource);
+    validateLinksBtn.addEventListener("click", validateLinks);
+    copyBtn.addEventListener("click", copyCurrentHtml);
+    copyChecklistBtn.addEventListener("click", copyChecklistFixes);
+    downloadBtn.addEventListener("click", openDownloadModal);
+    reloadListBtn.addEventListener("click", refreshCurrentSource);
+    uploadOpenBtn.addEventListener("click", triggerUpload);
+    pasteOpenBtn.addEventListener("click", openPasteModal);
+    previewUploadBtn.addEventListener("click", triggerUpload);
+    previewPasteBtn.addEventListener("click", openPasteModal);
+    pasteCancelBtn.addEventListener("click", closePasteModal);
+    downloadCancelBtn.addEventListener("click", closeDownloadModal);
 
-    const refreshBtn = document.getElementById("refreshBtn");
-    const copyBtn = document.getElementById("copyBtn");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const downloadModal = document.getElementById("downloadModal");
-    const downloadName = document.getElementById("downloadName");
-    const downloadCancel = document.getElementById("downloadCancel");
-    const downloadConfirm = document.getElementById("downloadConfirm");
-
-    function updateActionButtons() {
-      const enabled = !!currentFile;
-      refreshBtn.disabled = !enabled;
-      copyBtn.disabled = !enabled;
-      downloadBtn.disabled = !enabled;
-    }
-
-    refreshBtn.addEventListener("click", () => {
-      if (currentFile) loadPreview();
+    uploadInput.addEventListener("change", async () => {
+      const [file] = uploadInput.files || [];
+      if (!file) return;
+      if (!/\.html?$/i.test(file.name)) {
+        setWorkspaceMessage("Choose an .html file.");
+        return;
+      }
+      await applyUploadedFile(file);
+      setWorkspaceMessage(`Loaded uploaded file: ${file.name}`);
     });
 
-    async function fetchCurrentFileSource() {
-      if (!currentFile) return null;
-      const res = await fetch(`/api/file?name=${encodeURIComponent(currentFile)}`);
-      return res.text();
-    }
-
-    copyBtn.addEventListener("click", async () => {
-      const html = await fetchCurrentFileSource();
-      if (!html) return;
-      await navigator.clipboard.writeText(html);
-      copyBtn.textContent = "Copied!";
-      copyBtn.classList.add("copied");
-      setTimeout(() => {
-        copyBtn.textContent = "Copy Code";
-        copyBtn.classList.remove("copied");
-      }, 2000);
+    pasteApplyBtn.addEventListener("click", async () => {
+      const html = pasteInput.value.trim();
+      if (!html) {
+        setWorkspaceMessage("Paste HTML into the draft field first.");
+        return;
+      }
+      closePasteModal();
+      await applyPastedHtml(html);
     });
 
-    downloadBtn.addEventListener("click", () => {
-      const base = (currentFile || "email.html").replace(/\.html$/, "");
-      const now = new Date();
-      const ts = now.getFullYear() + "-"
-        + String(now.getMonth() + 1).padStart(2, "0") + "-"
-        + String(now.getDate()).padStart(2, "0") + "_"
-        + String(now.getHours()).padStart(2, "0")
-        + String(now.getMinutes()).padStart(2, "0");
-      downloadName.value = `${base}_${ts}.html`;
-      downloadModal.classList.add("open");
-      downloadName.focus();
-      downloadName.select();
+    downloadConfirmBtn.addEventListener("click", downloadCurrentHtml);
+
+    pasteModal.addEventListener("click", (event) => {
+      if (event.target === pasteModal) closePasteModal();
     });
 
-    downloadCancel.addEventListener("click", () => {
-      downloadModal.classList.remove("open");
+    downloadModal.addEventListener("click", (event) => {
+      if (event.target === downloadModal) closeDownloadModal();
     });
 
-    downloadModal.addEventListener("click", (e) => {
-      if (e.target === downloadModal) downloadModal.classList.remove("open");
+    downloadName.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") downloadCurrentHtml();
+      if (event.key === "Escape") closeDownloadModal();
     });
 
-    downloadName.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") downloadConfirm.click();
-      if (e.key === "Escape") downloadCancel.click();
+    pasteInput.addEventListener("keydown", async (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        pasteApplyBtn.click();
+      }
+      if (event.key === "Escape") closePasteModal();
     });
 
-    downloadConfirm.addEventListener("click", async () => {
-      let name = downloadName.value.trim() || "email.html";
-      if (!name.endsWith(".html")) name += ".html";
-      const html = await fetchCurrentFileSource();
-      if (!html) return;
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(url);
-      downloadModal.classList.remove("open");
-    });
-
-    // --- WebSocket ---
-
-    function connectWS() {
-      const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      const ws = new WebSocket(`${proto}//${location.host}`);
-
-      ws.addEventListener("open", () => {
-        statusDot.className = "status-dot connected";
-        statusText.textContent = "Connected";
-      });
-
-      ws.addEventListener("close", () => {
-        statusDot.className = "status-dot disconnected";
-        statusText.textContent = "Disconnected";
-        setTimeout(connectWS, 2000);
-      });
-
-      ws.addEventListener("message", (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data.type === "change") {
-            files = data.files;
-            renderFileList();
-
-            // If the currently-viewed file was changed or is still present, reload it
-            if (currentFile && data.file === currentFile && data.event !== "unlink") {
-              loadPreview();
-            }
-            // If the currently-viewed file was deleted, clear the preview
-            if (currentFile && data.event === "unlink" && data.file === currentFile) {
-              currentFile = null;
-              previewFrame.style.display = "none";
-              noFileEl.style.display = "flex";
-              updateActionButtons();
-            }
-          }
-        } catch (err) {
-          console.error("WS message error:", err);
-        }
-      });
-    }
-
-    // --- Init ---
     async function init() {
-      await fetchFileList();
-      connectWS();
-      // Auto-select file from ?file= query param
+      setPreviewWidth("full");
+      await Promise.all([fetchConfig(), fetchFileList()]);
+      renderAll();
+
       const params = new URLSearchParams(location.search);
-      const requested = params.get("file");
-      if (requested && files.some((f) => f.name === requested)) {
-        selectFile(requested);
+      const requestedFile = params.get("file");
+      if (requestedFile && state.files.some((file) => file.name === requestedFile)) {
+        await selectFile(requestedFile);
+        return;
+      }
+
+      if (state.config && state.config.startupFileName) {
+        await loadStartupSource();
+        return;
+      }
+
+      if (state.files[0]) {
+        await selectFile(state.files[0].name);
       }
     }
-    init();
+
+    init().catch((error) => {
+      console.error(error);
+      setWorkspaceMessage("App failed to initialize.");
+    });
   </script>
 </body>
 </html>
