@@ -10,7 +10,7 @@
     { "source": "/api/file", "destination": "/api/files" },
     { "source": "/api/startup-file", "destination": "/api/startup-file" },
     { "source": "/api/analyze", "destination": "/api/analyze" },
-    { "source": "/api/validate-links", "destination": "/api/validate-links" }
-  ],
-  "outputDirectory": "public"
+    { "source": "/api/validate-links", "destination": "/api/validate-links" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
 }
