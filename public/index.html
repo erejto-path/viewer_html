@@ -1181,7 +1181,7 @@
       previewIframe.style.height = "320px";
 
       if (state.sourceMode === "startup") {
-        setIframeSrc(`/preview-startup/${encodeURIComponent(state.startupFileName)}?_=${Date.now()}`);
+        setIframeSrcdoc(state.startupHtml);
       } else if (state.sourceMode === "pasted") {
         setIframeSrcdoc(state.pastedHtml);
       } else if (state.sourceMode === "upload") {
