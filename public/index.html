@@ -1461,10 +1461,34 @@
       if (event.key === "Escape") closePasteModal();
     });
 
+    function loadFromHash() {
+      const hash = location.hash.slice(1);
+      if (!hash) return null;
+      const params = new URLSearchParams(hash);
+      const data = params.get("data");
+      if (!data) return null;
+      try {
+        const html = atob(data.replace(/-/g, "+").replace(/_/g, "/"));
+        const name = params.get("name") || "opened.html";
+        history.replaceState(null, "", location.pathname + location.search);
+        return { html, name };
+      } catch { return null; }
+    }
+
     async function init() {
       setPreviewWidth("full");
       await Promise.all([fetchConfig(), fetchFileList()]);
       renderAll();
+
+      const hashFile = loadFromHash();
+      if (hashFile) {
+        await activateSource({
+          sourceMode: "upload",
+          uploadedHtml: hashFile.html,
+          uploadedFileName: hashFile.name,
+        });
+        return;
+      }
 
       try {
         const openedRes = await fetch("/api/opened");
