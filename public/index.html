@@ -167,7 +167,6 @@
       gap: 20px;
       align-items: start;
       padding-bottom: 20px;
-      border-bottom: 1px solid var(--line);
     }
 
     .hero-copy {
@@ -179,7 +178,6 @@
       font-size: 36px;
       line-height: 0.95;
       letter-spacing: -0.05em;
-      max-width: 14ch;
     }
 
     .source-bar,
@@ -557,12 +555,7 @@
       <section class="workspace-card">
         <div class="hero">
           <div class="hero-copy">
-            <div class="source-bar">
-              <span class="source-chip" id="sourceChip">No source selected</span>
-              <span class="summary-pill" id="widthChip">Preview width: 600px</span>
-            </div>
             <h2>Clear the send before it reaches HubSpot.</h2>
-            <p class="supporting-copy">Check width behavior, scan the checklist, and validate links before marketing moves the HTML into the sending platform.</p>
           </div>
 
           <div class="control-panel">
@@ -730,8 +723,6 @@
     };
 
     const sourceModeLabel = document.getElementById("sourceModeLabel");
-    const sourceChip = document.getElementById("sourceChip");
-    const widthChip = document.getElementById("widthChip");
     const previewLabel = document.getElementById("previewLabel");
     const workspaceStatus = document.getElementById("workspaceStatus");
     const checklistStatus = document.getElementById("checklistStatus");
@@ -813,12 +804,10 @@
 
       if (width === "full") {
         previewFrame.style.width = "100%";
-        widthChip.textContent = "Preview width: Full";
         return;
       }
 
       previewFrame.style.width = `${width}px`;
-      widthChip.textContent = `Preview width: ${width}px`;
     }
 
     function updateButtons() {
@@ -851,7 +840,6 @@
 
     function updateSourceMeta() {
       const sourceName = getSourceName();
-      sourceChip.textContent = sourceName;
       previewLabel.textContent = sourceName === "No source selected" ? "No email loaded" : sourceName;
 
       switch (state.sourceMode) {
@@ -1477,6 +1465,19 @@
       setPreviewWidth("full");
       await Promise.all([fetchConfig(), fetchFileList()]);
       renderAll();
+
+      try {
+        const openedRes = await fetch("/api/opened");
+        if (openedRes.ok) {
+          const data = await openedRes.json();
+          await activateSource({
+            sourceMode: "upload",
+            uploadedHtml: data.html,
+            uploadedFileName: data.name,
+          });
+          return;
+        }
+      } catch { /* no opened file */ }
 
       const params = new URLSearchParams(location.search);
       const requestedFile = params.get("file");

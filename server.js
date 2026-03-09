@@ -11,6 +11,8 @@ const STARTUP_FILE = path.join(__dirname, "energy-demo-day-reminder-light.html")
 const STARTUP_DIR = path.dirname(STARTUP_FILE);
 const REQUEST_BODY_LIMIT = 2 * 1024 * 1024;
 
+let openedFile = null;
+
 fs.mkdirSync(WATCH_DIR, { recursive: true });
 
 const MIME = {
@@ -209,6 +211,41 @@ async function handleApiRequest(req, res, parsedUrl) {
     } catch (error) {
       sendJSON(res, 500, { error: error.message });
     }
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/open") {
+    try {
+      const body = await readJSONBody(req);
+      const filePath = typeof body.path === "string" ? path.resolve(body.path) : null;
+
+      if (!filePath) {
+        sendJSON(res, 400, { error: "path is required" });
+        return true;
+      }
+
+      if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+        sendJSON(res, 404, { error: "File not found" });
+        return true;
+      }
+
+      const html = await readFileUtf8(filePath);
+      openedFile = { name: path.basename(filePath), html };
+      sendJSON(res, 200, { ok: true, name: openedFile.name });
+    } catch (error) {
+      sendJSON(res, 400, { error: error.message });
+    }
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/api/opened") {
+    if (!openedFile) {
+      sendJSON(res, 404, { error: "No file has been opened" });
+      return true;
+    }
+    const file = openedFile;
+    openedFile = null;
+    sendJSON(res, 200, file);
     return true;
   }
 
