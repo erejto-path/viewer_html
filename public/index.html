@@ -1055,13 +1055,17 @@
     }
 
     async function fetchConfig() {
-      const res = await fetch("/api/config");
-      state.config = await res.json();
+      try {
+        const res = await fetch("/api/config");
+        if (res.ok) state.config = await res.json();
+      } catch { /* hosted mode — no config endpoint */ }
     }
 
     async function fetchFileList() {
-      const res = await fetch("/api/files");
-      state.files = await res.json();
+      try {
+        const res = await fetch("/api/files");
+        if (res.ok) state.files = await res.json();
+      } catch { /* hosted mode — no files endpoint */ }
     }
 
     async function getCurrentHtml() {
