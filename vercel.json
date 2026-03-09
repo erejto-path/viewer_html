@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/startup-file.js": {
+      "includeFiles": "energy-demo-day-reminder-light.html"
+    }
+  },
   "rewrites": [
     { "source": "/api/config", "destination": "/api/config" },
     { "source": "/api/files", "destination": "/api/files" },

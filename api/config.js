@@ -3,6 +3,6 @@ module.exports = (req, res) => {
     port: null,
     watchDir: null,
     defaultWatchDir: null,
-    startupFileName: null,
+    startupFileName: "energy-demo-day-reminder-light.html",
   });
 };
