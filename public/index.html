@@ -1000,7 +1000,7 @@
         const badge = el("span", "link-badge");
         if (result) {
           badge.classList.add(result.ok ? "good" : "bad");
-          badge.textContent = result.status ? `HTTP ${result.status}` : "Failed";
+          badge.textContent = result.ok ? "Working" : (result.status ? `Broken (${result.status})` : "Failed");
         } else if (link.checkable || link.issue) {
           badge.classList.add("warn");
           badge.textContent = link.checkable ? "Not validated" : "Needs review";
